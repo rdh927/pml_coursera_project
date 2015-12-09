@@ -5,12 +5,74 @@ date: "December 9, 2015"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r, echo=FALSE}
+#load the right libraries
+library(caret)
+library(randomForest)
+
+# set the appropriate working directory
+setwd("c://Users/Rachel/Documents/R Programming/mach_learn")
+```
 
 ```{r}
-summary(cars)
+# load the training and test data
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+set.seed(4544)
+
+# split training set into training and test sets for future cross-validation
+intrain <- createDataPartition(training$classe, p=0.7, list=FALSE)
+train <- training[intrain,]
+test <- training[-intrain,]
+
+# holy variables batman! pare them down 
+
+#remove the beginning stuff
+train1a <- train[,7:160]
+
+#remove the columns with NAs
+train1b <- train1a[, colSums(is.na(train1a)) == 0]
+
+#remove factor variables
+nums <- sapply(train1b, is.numeric)
+train1c <- train1b[,nums]
+train1d <- cbind(train1c, train$classe)
+
+# rename classe variable
+names(train1d)[54] <- "classe"
+
+#cbind classe to test to check predictions
+test1a <- cbind(test, test$classe)
+
+# remove some more variables due to high correlation; 34 variables left
+cormatrix <- cor(train1d)
+cors <- findCorrelation(cormatrix, cutoff=0.75)
+train1e <- train1d[,-cors]
+
+# Exploratory analyses
+qplot(max_roll_belt, max_picth_belt,data=training, color=classe)
+qplot(max_yaw_belt, amplitude_pitch_belt,data=training, color=classe)
+qplot(var_total_accel_belt, avg_roll_belt, data=training, color=classe)
+qplot(avg_roll_belt, var_roll_belt, data=training, color=classe)
+qplot(avg_yaw_belt, avg_pitch_belt, data=training, color=classe)
+qplot(gyros_belt_x, gyros_belt_y, data=training, color=classe)
+qplot(gyros_belt_y, gyros_belt_z, data=training, color=classe)
+qplot(magnet_belt_x, magnet_belt_y, data=training, color=classe)
+qplot(roll_arm, pitch_arm, data=training, color=classe)
+qplot(roll_arm, yaw_arm, data=training, color=classe)
+qplot(pitch_arm, yaw_arm, data=training, color=classe)
+qplot(var_yaw_arm, gyros_arm_x, data=training, color=classe)
+qplot(accel_arm_y, accel_arm_z, data=training, color=classe)
+qplot(accel_arm_x, accel_arm_y, data=training, color=classe)
+
+rf1 <- randomForest(classe ~., data=train1d)
+varImp(rf1)
+pred <- predict(rf1, test)
+rf1
+pred1 <- predict(rf1, test)
+pred_final <- predict(rf1, testing)
 ```
 
 You can also embed plots, for example:
