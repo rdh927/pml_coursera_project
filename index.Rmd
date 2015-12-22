@@ -4,81 +4,103 @@ author: "rdh927"
 date: "December 9, 2015"
 output: html_document
 ---
+The goal of this project is to develop a machine learning algorithm to predict which exercise (A, B, C, D, or E), designated by the "classe" variable, is being performed based on a set of available motion sensing data collected by fitness wearables.
+# Preprocessing the Data
 
-
-
+We begin by loading the caret and random forest libraries, and setting the working directory.
 ```{r, echo=FALSE}
 #load the right libraries
 library(caret)
 library(randomForest)
+library(verification)
 
 # set the appropriate working directory
-setwd("c://Users/Rachel/Documents/R Programming/mach_learn")
+setwd("C://Users/Rachel/Documents/R Programming/mach_learn/pml_coursera_project")
 ```
 
+Next, we load the training and test data and set the seed for reproducibility.
 ```{r}
 # load the training and test data
 training <- read.csv("pml-training.csv")
 testing <- read.csv("pml-testing.csv")
 set.seed(4544)
+```
 
+The training set was further split into training (70%) and testing (30%) sets for cross-validation by the "classe" variable.
+```{r}
 # split training set into training and test sets for future cross-validation
 intrain <- createDataPartition(training$classe, p=0.7, list=FALSE)
-train <- training[intrain,]
-test <- training[-intrain,]
+data_train <- training[intrain,]
+data_test <- training[-intrain,]
+```
 
-# holy variables batman! pare them down 
+The random forest method was chosen as the optimal method for this project, due to its high level of accuracy. In order to cut down on the computational strain and time committment, however, some of the variables in the training set were removed. I removed the first few columns (names, timestamps) because it did not contain direct motion data, and also the variables that contained NA values. 
+```{r}
+# paring down the number of variables 
 
-#remove the beginning stuff
-train1a <- train[,7:160]
+#remove the beginning information
+train1a <- data_train[,7:160]
 
 #remove the columns with NAs
 train1b <- train1a[, colSums(is.na(train1a)) == 0]
+```
 
+Finally, I removed the variables that weren't numeric and renamed the "classe" variable to avoid confusion later.
+```{r}
 #remove factor variables
 nums <- sapply(train1b, is.numeric)
 train1c <- train1b[,nums]
-train1d <- cbind(train1c, train$classe)
+train1d <- cbind(train1c, data_train$classe)
 
 # rename classe variable
 names(train1d)[54] <- "classe"
+```
 
-#cbind classe to test to check predictions
-test1a <- cbind(test, test$classe)
+# Developing the model
 
-# remove some more variables due to high correlation; 34 variables left
-cormatrix <- cor(train1d)
-cors <- findCorrelation(cormatrix, cutoff=0.75)
-train1e <- train1d[,-cors]
-
-# Exploratory analyses
-qplot(max_roll_belt, max_picth_belt,data=training, color=classe)
-qplot(max_yaw_belt, amplitude_pitch_belt,data=training, color=classe)
-qplot(var_total_accel_belt, avg_roll_belt, data=training, color=classe)
-qplot(avg_roll_belt, var_roll_belt, data=training, color=classe)
-qplot(avg_yaw_belt, avg_pitch_belt, data=training, color=classe)
-qplot(gyros_belt_x, gyros_belt_y, data=training, color=classe)
-qplot(gyros_belt_y, gyros_belt_z, data=training, color=classe)
-qplot(magnet_belt_x, magnet_belt_y, data=training, color=classe)
-qplot(roll_arm, pitch_arm, data=training, color=classe)
-qplot(roll_arm, yaw_arm, data=training, color=classe)
-qplot(pitch_arm, yaw_arm, data=training, color=classe)
-qplot(var_yaw_arm, gyros_arm_x, data=training, color=classe)
-qplot(accel_arm_y, accel_arm_z, data=training, color=classe)
-qplot(accel_arm_x, accel_arm_y, data=training, color=classe)
-
+I used the following code to train the model:
+```{r}
 rf1 <- randomForest(classe ~., data=train1d)
-varImp(rf1)
-pred <- predict(rf1, test)
-rf1
-pred1 <- predict(rf1, test)
+print(rf1)
+mean_err_rate <- mean(rf1$err.rate)
+print(mean_err_rate)
+```
+The out-of-bag error estimate is 0.31%, and the confusion matrix tells us that this model is highly accurate, with a mean error rate in-sample of 0.51%. 
+
+# Cross-validation
+We can validate our results by trying out our model on the data_test data from our original training set, to show that we haven't over-fit the data.
+
+```{r}
+pred_test <- predict(rf1, data_test)
+confusionMatrix(pred_test, data_test$classe)
+```
+Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound. 
+
+# Apply model to final testing set to get the answers
 pred_final <- predict(rf1, testing)
+
+
+# Text file submission
+Finally, I wrote up the files into .txt files for submission.
+```{r}
+# write files for submission
+pml_write_files = function(x) {
+    n = length(x)
+    for (i in 1:n) {
+        filename = paste0("problem_id_", i, ".txt")
+        write.table(x[i], file = filename, quote = FALSE, row.names = FALSE, 
+            col.names = FALSE)
+    }
+}
 ```
 
-You can also embed plots, for example:
+# Figures
 
-```{r, echo=FALSE}
-plot(cars)
+```{r}
+varImpPlot(rf1)
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Figure 1. 
+```{r}
+plot(rf1, main="Error Rates for rf1", log="y")
+```
+Figure 2. 
