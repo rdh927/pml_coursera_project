@@ -1,7 +1,7 @@
 ---
 title: "PML Project - Exercise Data"
 author: "rdh927"
-date: "December 9, 2015"
+date: "December 22, 2015"
 output: html_document
 ---
 The goal of this project is to develop a machine learning algorithm to predict which exercise (A, B, C, D, or E), designated by the "classe" variable, is being performed based on a set of available motion sensing data collected by fitness wearables.
@@ -56,7 +56,6 @@ names(train1d)[54] <- "classe"
 ```
 
 # Developing the model
-
 I used the following code to train the model:
 ```{r}
 rf1 <- randomForest(classe ~., data=train1d)
@@ -72,7 +71,7 @@ We can validate our results by trying out our model on the data_test data from o
 pred_test <- predict(rf1, data_test)
 confusionMatrix(pred_test, data_test$classe)
 ```
-Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound.
+Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound. We expect the out-of-sample error rate to be less than 1%, since we only have 1 or 2 misclassifications per ~1000 data points.
 
 The out-of-sample error rate is calculated as the number of wrong predictions divided by the total number of predictions in the test set, times 100 (to get a percent value).
 ```{r}
@@ -81,10 +80,10 @@ print(err_rate)
 ```
 The out-of-sample error rate is estimated to be ~0.1%.
 
-## Apply model to final testing set to get the answers
+### Apply model to final testing set to get the answers
 pred_final <- predict(rf1, testing)
 
-## Text file submission
+### Text file submission
 Finally, I wrote up the files into .txt files for submission.
 ```{r}
 # write files for submission

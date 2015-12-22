@@ -10,6 +10,7 @@
 
 <meta name="author" content="rdh927" />
 
+<meta name="date" content="2015-12-22" />
 
 <title>PML Project - Exercise Data</title>
 
@@ -63,7 +64,7 @@ img {
 <div id="header">
 <h1 class="title">PML Project - Exercise Data</h1>
 <h4 class="author"><em>rdh927</em></h4>
-<h4 class="date"><em>December 9, 2015</em></h4>
+<h4 class="date"><em>December 22, 2015</em></h4>
 </div>
 
 
@@ -93,7 +94,7 @@ set.seed(4544)</code></pre>
 intrain &lt;- createDataPartition(training$classe, p=0.7, list=FALSE)
 data_train &lt;- training[intrain,]
 data_test &lt;- training[-intrain,]</code></pre>
-<p>The random forest method was chosen as the optimal method for this project, due to its high level of accuracy given a large number of input variables. In order to cut down on the computational strain and time committment, however, some of the variables in the training set were removed. I removed the first few columns (names, timestamps) because it did not contain direct motion data, and also the variables that contained NA values (since they contained little actual predictive data.</p>
+<p>The random forest method was chosen as the optimal method for this project, due to its high level of accuracy given a large number of input variables. In order to cut down on the computational strain and time committment, however, some of the variables in the training set were removed. I removed the first few columns (names, timestamps) because it did not contain direct motion data, and also the variables that contained NA values (since they contained little actual predictive data).</p>
 <pre class="r"><code># paring down the number of variables 
 
 #remove the beginning information
@@ -171,18 +172,18 @@ confusionMatrix(pred_test, data_test$classe)</code></pre>
 ## Detection Rate         0.2845   0.1934   0.1740   0.1635   0.1837
 ## Detection Prevalence   0.2846   0.1934   0.1743   0.1640   0.1837
 ## Balanced Accuracy      0.9999   0.9996   0.9988   0.9987   0.9995</code></pre>
-<p>Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound.</p>
-<p>The out of sample error rate is calculated as the number of wrong predictions divided by the total number of predictions in the test set, times 100 (to get a percent value).</p>
+<p>Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound. We expect the out-of-sample error rate to be less than 1%, since we only have 1 or 2 misclassifications per ~1000 data points.</p>
+<p>The out-of-sample error rate is calculated as the number of wrong predictions divided by the total number of predictions in the test set, times 100 (to get a percent value).</p>
 <pre class="r"><code>err_rate &lt;- 100*(sum(data_test$classe != pred_test)/length(data_test$classe))
 print(err_rate)</code></pre>
 <pre><code>## [1] 0.1019541</code></pre>
 <p>The out-of-sample error rate is estimated to be ~0.1%.</p>
-<div id="apply-model-to-final-testing-set-to-get-the-answers" class="section level2">
-<h2>Apply model to final testing set to get the answers</h2>
+<div id="apply-model-to-final-testing-set-to-get-the-answers" class="section level3">
+<h3>Apply model to final testing set to get the answers</h3>
 <p>pred_final &lt;- predict(rf1, testing)</p>
 </div>
-<div id="text-file-submission" class="section level2">
-<h2>Text file submission</h2>
+<div id="text-file-submission" class="section level3">
+<h3>Text file submission</h3>
 <p>Finally, I wrote up the files into .txt files for submission.</p>
 <pre class="r"><code># write files for submission
 pml_write_files = function(x) {
