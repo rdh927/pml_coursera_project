@@ -5,14 +5,13 @@ date: "December 9, 2015"
 output: html_document
 ---
 The goal of this project is to develop a machine learning algorithm to predict which exercise (A, B, C, D, or E), designated by the "classe" variable, is being performed based on a set of available motion sensing data collected by fitness wearables.
-# Preprocessing the Data
 
+# Loading and Preprocessing the Data
 We begin by loading the caret and random forest libraries, and setting the working directory.
-```{r, echo=FALSE}
+```{r}
 #load the right libraries
 library(caret)
 library(randomForest)
-library(verification)
 
 # set the appropriate working directory
 setwd("C://Users/Rachel/Documents/R Programming/mach_learn/pml_coursera_project")
@@ -34,7 +33,7 @@ data_train <- training[intrain,]
 data_test <- training[-intrain,]
 ```
 
-The random forest method was chosen as the optimal method for this project, due to its high level of accuracy. In order to cut down on the computational strain and time committment, however, some of the variables in the training set were removed. I removed the first few columns (names, timestamps) because it did not contain direct motion data, and also the variables that contained NA values. 
+The random forest method was chosen as the optimal method for this project, due to its high level of accuracy given a large number of input variables. In order to cut down on the computational strain and time committment, however, some of the variables in the training set were removed. I removed the first few columns (names, timestamps) because it did not contain direct motion data, and also the variables that contained NA values (since they contained little actual predictive data). 
 ```{r}
 # paring down the number of variables 
 
@@ -65,22 +64,27 @@ print(rf1)
 mean_err_rate <- mean(rf1$err.rate)
 print(mean_err_rate)
 ```
-The out-of-bag error estimate is 0.31%, and the confusion matrix tells us that this model is highly accurate, with a mean error rate in-sample of 0.51%. 
+The out-of-bag error estimate is 0.31%, and the confusion matrix tells us that this model is highly accurate, with a mean in-sample error rate of 0.51%. 
 
-# Cross-validation
+# Cross-validation and out-of-sample error
 We can validate our results by trying out our model on the data_test data from our original training set, to show that we haven't over-fit the data.
-
 ```{r}
 pred_test <- predict(rf1, data_test)
 confusionMatrix(pred_test, data_test$classe)
 ```
-Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound. 
+Again, we see very high accuracy with only a few misclassifications, so our model appears to be sound.
 
-# Apply model to final testing set to get the answers
+The out-of-sample error rate is calculated as the number of wrong predictions divided by the total number of predictions in the test set, times 100 (to get a percent value).
+```{r}
+err_rate <- 100*(sum(data_test$classe != pred_test)/length(data_test$classe))
+print(err_rate)
+```
+The out-of-sample error rate is estimated to be ~0.1%.
+
+## Apply model to final testing set to get the answers
 pred_final <- predict(rf1, testing)
 
-
-# Text file submission
+## Text file submission
 Finally, I wrote up the files into .txt files for submission.
 ```{r}
 # write files for submission
@@ -92,15 +96,38 @@ pml_write_files = function(x) {
             col.names = FALSE)
     }
 }
+#knit2html doesn't like this line so I commented it out, it works when pasted into the console.
+#pml_write_files(pred_final)
 ```
 
 # Figures
 
-```{r}
-varImpPlot(rf1)
+```{r, echo=FALSE}
+varImpPlot(rf1,n.var=min(10, nrow(rf1$importance)))
 ```
-Figure 1. 
-```{r}
+
+**Figure 1**. This plot depicts the ten most important variables in descending order of importance, beginning with num_window (the most important variable for prediction). The points along the x-axis ("MeanDecreaseGini") give the numeric value of the variable importance. 
+
+```{r, echo=FALSE}
+# adapted from http://stackoverflow.com/questions/20328452/legend-for-random-forest-plot-in-r
+
+#sets up plot and legend in a 1x2 matrix
+layout(matrix(c(1,2),nrow=1), width=c(4,1)) 
+
+#remove right side margin
+par(mar=c(5,4,4,0))
+
+#plot the rf1 error rates
 plot(rf1, main="Error Rates for rf1", log="y")
+
+#remove left side margin
+par(mar=c(5,0,4,2))
+
+#plot placeholder
+plot(c(0,1),type="n", axes=F, xlab="", ylab="")
+
+#place legend at the top, make sure colors correspond to the correct factors
+legend("top", colnames(rf1$err.rate),col=1:5,cex=0.8, fill=1:6)
 ```
-Figure 2. 
+
+**Figure 2.** This plot shows the error rate (on a logarithmic scale) as a function of the number of trees in the random forest. The different colors correspond to to out-of-bag error (in black) and each classe factor (A, B, C, D, or E).
